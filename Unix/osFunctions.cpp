@@ -1,5 +1,5 @@
 //Primary author: Jonathan Bedard
-//Confirmed working: 11/2/2014
+//Confirmed working: 11/29/2014
 
 /*
 MAC/LINUX
@@ -145,23 +145,19 @@ MAC/LINUX
 	//Constructor
 	IPAddress::IPAddress()
 	{
-		inet_pton(AF_INET, "127.0.0.1", &(address));
-		inet_ntop(AF_INET,&address,name,80);
+		inet_pton(AF_INET, (char*)"127.0.0.1", &(address));
 	}
 	IPAddress::IPAddress(string x)
 	{
 		inet_pton(AF_INET, x.c_str(), &(address));
-		inet_ntop(AF_INET,&address,name,80);
 	}
-	IPAddress::IPAddress(sockaddr_in x)
+	IPAddress::IPAddress(IN_ADDR x)
 	{
 		address = x;
-		inet_ntop(AF_INET,&address,name,80);
 	}
 	IPAddress::IPAddress(IPAddress* x)
 	{
 		address = x->address;
-		inet_ntop(AF_INET,&address,name,80);
 	}
 	//Destructor
 	IPAddress::~IPAddress()
@@ -171,14 +167,22 @@ MAC/LINUX
 	//Returns the string of an IP address
 	char* IPAddress::printAddress()
 	{
-		inet_ntop(AF_INET,&address,name,80);
+		char* temp = inet_ntoa(address);
+		int cnt = 0;
+
+		while(cnt<79&&temp[cnt]!=0)
+		{
+			name[cnt] = temp[cnt];
+			cnt++;
+		}
+		name[cnt] = 0;
 		return name;
 	}
 	//Compares to IP addresses for equality
 	int IPAddress::compare(const IPAddress* comp) const
 	{
-		uint32_t* me = (uint32_t*) &(address.sin_addr);
-		uint32_t* them = (uint32_t*) &(comp->address.sin_addr);
+		uint32_t* me = (uint32_t*) &address;
+		uint32_t* them = (uint32_t*) &(comp->address);
 		if((*me)==(*them))
 			return 0;
 		if((*me)>(*them))
@@ -192,18 +196,17 @@ MAC/LINUX
 	myIPAddress::myIPAddress()
 	{
 		address = resetAddress();
-		inet_ntop(AF_INET,&address,name,80);
 	}
 	//Destructor
 	myIPAddress::~myIPAddress()
 	{
 	}
 	//Resets the address
-	sockaddr_in myIPAddress::resetAddress()
+	IN_ADDR myIPAddress::resetAddress()
 	{
 		last = clock();
-		sockaddr_in ret;
-		inet_pton(AF_INET, "127.0.0.1", &(ret));
+		IN_ADDR ret;
+		inet_pton(AF_INET, (char*)"127.0.0.1", &(ret));
 		
 		ifaddrs* addrs;
 		ifaddrs* ip_array;
@@ -237,7 +240,15 @@ MAC/LINUX
 	//Returns the string of the IP address
 	char* myIPAddress::getIPString()
 	{
-		inet_ntop(AF_INET,&address,name,80);
+		char* temp = inet_ntoa(address);
+		int cnt = 0;
+
+		while(cnt<79&&temp[cnt]!=0)
+		{
+			name[cnt] = temp[cnt];
+			cnt++;
+		}
+		temp[cnt] = 0;
 		return name;
 	}
 	//Returns the host name of this computer
@@ -276,7 +287,7 @@ MAC/LINUX
 	//Sending initializer
 	UDPPacket::UDPPacket(uint8_t* output, int l, int t, IPAddress* i,int p)
 	{
-		ip.address = i->address;
+		ip = IPAddress(i->printAddress());
 
 		//Length
 		if(l>0 && l<510)
@@ -396,10 +407,10 @@ MAC/LINUX
 		if(active)
 		{
 			//setup address structure
-			memset(&si_other, 0, sizeof(si_other));
+			bzero(&si_other, sizeof(si_other));
 			si_other.sin_family = AF_INET;
 			si_other.sin_port = htons(intPort);
-			si_other.sin_addr = address.address.sin_addr;
+			si_other.sin_addr = address.address;
 		}
 
 	}
@@ -455,7 +466,7 @@ MAC/LINUX
 				{
 					conTrack = resetVal;
 					IPAddress temp;
-					temp.address = si_other;
+					temp.address = si_other.sin_addr;
 					UDPPacket* pck = new UDPPacket((uint8_t*) buf, &temp,si_other.sin_port);
 					incomingPackets.push(pck);
 
@@ -517,8 +528,7 @@ MAC/LINUX
 	bool UDPClient::send(UDPPacket* pck)
 	{
 		char* sent = (char*) pck->sendData();
-		
-		if (sendto(s, sent, pck->getLength()+2, 0 , (sockaddr *) &si_other, slen) == pck->getLength()+2)
+		if (sendto(s, sent, pck->getLength()+2, 0 , (sockaddr *) &si_other, slen) > 0)
 			return true;
 		return false;
 	}
@@ -588,7 +598,7 @@ MAC/LINUX
 		if(!connected)
 		{
 			//Create a socket
-			if((s = socket(AF_INET , SOCK_DGRAM , 0 )) <0)
+			if((s = socket(AF_INET , SOCK_DGRAM , IPPROTO_UDP )) <0)
 			{
 				cerr<<"Could not create server socket"<<endl;;
 				active = false;
@@ -597,19 +607,22 @@ MAC/LINUX
 			//Prepare the sockaddr_in structure
 			if(active)
 			{
+				bzero(&server, sizeof(server));
 				server.sin_family = AF_INET;
-				server.sin_addr.s_addr = INADDR_ANY;
+				server.sin_addr.s_addr = htonl(INADDR_ANY);
 				server.sin_port = htons( intPort );
 			}
+			else
+				return;
 			
 			int temp = false;
-			setsockopt(s, SOL_SOCKET,
-			      SO_REUSEADDR,
-			      (const char *) &temp, sizeof(temp));
+			setsockopt(s, SOL_SOCKET,SO_REUSEADDR,(const char *) &temp, sizeof(temp));
 			
 			 //Bind
-			if(bind(s ,(struct sockaddr *)&server , sizeof(server)) < 0)
+				//Failure in the bind
+			if(bind(s ,(struct sockaddr *)&server , sizeof(server)) == -1)
 				return;
+			
 			connected = true;
 			spawnThread(&recieveThreadServer,this);
 		}
@@ -619,7 +632,7 @@ MAC/LINUX
 	{
 		if(connected)
 		{
-			connected = true;
+			connected = false;
 		
 			int temp = false;
 			setsockopt(s, SOL_SOCKET,
@@ -645,16 +658,16 @@ MAC/LINUX
 			memset(buf,'\0', BUFLEN);
          
 			//try to receive some data, this is a blocking call
-			if ((recvfrom(s, buf, BUFLEN, 0, (struct sockaddr *) &si_other,  (socklen_t*)&slen)) < 0)
+			if ((recvfrom(s, buf, BUFLEN, 0, (struct sockaddr *) &si_other,  &slen)) != -1)
 			{
-			    safeDelete.acquire();
+				safeDelete.acquire();
 				if(connected)
 				{
 					IPAddress temp;
-					temp.address = si_other;
+					temp.address = si_other.sin_addr;
 					UDPPacket* pck = new UDPPacket((uint8_t*) buf, &temp,si_other.sin_port);
 					incomingPackets.push(pck);
-
+					
 					//Raise the recieved event
 					if(recieveFunction!=NULL)
 						recieveFunction(recievePointer);
@@ -689,7 +702,7 @@ MAC/LINUX
 	bool UDPServer::send(UDPPacket* pck)
 	{
 		char* sent = (char*) pck->sendData();
-		si_other.sin_addr = pck->getAddress()->address.sin_addr;
+		si_other.sin_addr = pck->getAddress()->address;
 
 		if (sendto(s, sent, pck->getLength()+2, 0, (struct sockaddr*) &si_other,  (socklen_t) slen) < 0)
 			return true;

@@ -1,5 +1,5 @@
 //Primary author: Jonathan Bedard
-//Confirmed working: 11/2/2014
+//Confirmed working: 11/29/2014
 
 //This is the file which contains the declarations for the OS unique functions
 
@@ -14,7 +14,8 @@ MAC/LINUX
 #define BITTOBYTE(x) ((x) > 0 ? (x/8+1) : 1)
 #define BYTETOBIT(x) ((x) > 0 ? (x*8):0)
 #define GETBIT(d,p) ((d) & (1 << (p)))
-#define SETBIT(d,p,t) (t==0 ? d = (d)&~(1<<(p)):d = (d)|(1<<(p))) 
+#define SETBIT(d,p,t) (t==0 ? d = (d)&~(1<<(p)):d = (d)|(1<<(p)))
+#define IN_ADDR in_addr
 
 #include <stdio.h>
 #include <iostream>
@@ -89,11 +90,11 @@ protected:
 public:
 	IPAddress();
 	IPAddress(string x);
-	IPAddress(sockaddr_in x);
+	IPAddress(IN_ADDR x);
 	IPAddress(IPAddress* x);
 	~IPAddress();
 
-	sockaddr_in address;
+	IN_ADDR address;
 	
 	char* printAddress();
 	int compare(const IPAddress* comp) const;
@@ -103,8 +104,8 @@ public:
 class myIPAddress
 {
 private:
-	sockaddr_in address;
-	sockaddr_in resetAddress();
+	IN_ADDR address;
+	IN_ADDR resetAddress();
 	clock_t last;
 	char hostName[80];
 	char name[80];
@@ -210,7 +211,7 @@ private:
 	struct sockaddr_in si_other;
 	struct sockaddr_in server;
 	int s;
-	int slen;
+	socklen_t slen;
 
 public:
 	UDPServer(int port);
