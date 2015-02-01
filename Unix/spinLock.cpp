@@ -23,13 +23,13 @@ spinLock::~spinLock(){}
 //Acquire the lock
 void spinLock::acquire()
 {
-	pthread_spin_lock(&spinlock);
+	pthread_mutex_lock(&spinlock);
 	taken = true;
 }
 //Release the lock
 void spinLock::release()
 {
-	pthread_spin_unlock(&spinlock);
+	pthread_mutex_unlock(&spinlock);
 	taken = false;
 }
 //Test the lock (non blocking)

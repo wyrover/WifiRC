@@ -16,7 +16,7 @@ using namespace std;
 class spinLock
 {
 private:
-    pthread_spinlock_t spinlock;
+    pthread_mutex_t spinlock;
 	bool taken;
 public:
 	spinLock();

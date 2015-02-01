@@ -21,6 +21,7 @@ MAC/LINUX
 #include <iostream>
 #include <stdint.h>
 
+#include <unistd.h>
 #include <pthread.h>
 #include <netdb.h>
 #include <sys/types.h>
