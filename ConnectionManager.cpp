@@ -1,5 +1,5 @@
 //Primary author: Jonathan Bedard
-//Confirmed Working: 11/2/2014
+//Confirmed Working: 2/14/2015
 
 #ifndef CONNECTOINMANAGER_CPP
 #define CONNECTOINMANAGER_CPP
@@ -1432,7 +1432,7 @@ X-0-0-0-0-0-0-0
 		uint32_t* trc = (uint32_t*) ptr;
 		while(cnt<LARGE_NUMBER_SIZE/2)
 		{
-			trc[cnt] = pub_key.getArrayNumber(cnt);
+			trc[cnt] = to_comp_mode(pub_key.getArrayNumber(cnt));
 			cnt++;
 		}
 	}

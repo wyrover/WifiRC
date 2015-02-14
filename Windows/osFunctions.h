@@ -1,5 +1,5 @@
 //Primary author: Jonathan Bedard
-//Confirmed working: 10/28/2014
+//Confirmed working: 2/13/2015
 
 //This is the file which contains the declarations for the OS unique functions
 
@@ -53,6 +53,62 @@ static wchar_t *convertCharArrayToLPCWSTR(const char* charArray)
     wchar_t* wString=new wchar_t[4096];
     MultiByteToWideChar(CP_ACP, 0, charArray, -1, wString, 4096);
     return wString;
+}
+//Changes an int to compatibility mode
+static uint16_t to_comp_mode(uint16_t i)
+{
+	uint16_t temp = 1;
+	//Switch little to big endian
+	if(((char*) &temp)[0] == 0)
+	{
+		((char*) &temp)[0] = ((char*) &i)[1];
+		((char*) &temp)[1] = ((char*) &i)[0];
+		return temp;
+	}
+	return i;
+}
+//Changes an int from compatibility mode to system mode
+static uint16_t from_comp_mode(uint16_t i)
+{
+	uint16_t temp = 1;
+	//Switch little to big endian
+	if(((char*) &temp)[0] == 0)
+	{
+		((char*) &temp)[0] = ((char*) &i)[1];
+		((char*) &temp)[1] = ((char*) &i)[0];
+		return temp;
+	}
+	return i;
+}
+//Changes an int to compatibility mode
+static uint32_t to_comp_mode(uint32_t i)
+{
+	uint32_t temp = 1;
+	//Switch little to big endian
+	if(((char*) &temp)[0] == 0)
+	{
+		((char*) &temp)[0] = ((char*) &i)[3];
+		((char*) &temp)[1] = ((char*) &i)[2];
+		((char*) &temp)[2] = ((char*) &i)[1];
+		((char*) &temp)[3] = ((char*) &i)[0];
+		return temp;
+	}
+	return i;
+}
+//Changes an int from compatibility mode to system mode
+static uint32_t from_comp_mode(uint32_t i)
+{
+	uint32_t temp = 1;
+	//Switch little to big endian
+	if(((char*) &temp)[0] == 0)
+	{
+		((char*) &temp)[0] = ((char*) &i)[3];
+		((char*) &temp)[1] = ((char*) &i)[2];
+		((char*) &temp)[2] = ((char*) &i)[1];
+		((char*) &temp)[3] = ((char*) &i)[0];
+		return temp;
+	}
+	return i;
 }
 //Tests if a folder exists and then creates it
 static void testCreateFolder(std::string n)
